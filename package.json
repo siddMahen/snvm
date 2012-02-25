@@ -1,0 +1,13 @@
+{
+  "author": "Siddharth Mahendraker <siddharth_mahen@me.com>",
+  "name": "snvm",
+  "description": "Simple node version management.",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:siddMahen/snvm.git"
+  },
+  "bin": {
+    "snvm": "./bin/snvm"
+  }
+}

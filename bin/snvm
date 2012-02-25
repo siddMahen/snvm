@@ -1,0 +1,194 @@
+#!/bin/bash -e
+
+# Installs the specified version of node.js
+# usage: nodeup [ install | use ] [v]0.0.0
+#        nodeup list
+
+restore=$PWD
+
+# This needs to be changed to work for everyone
+base_dir=$HOME/GitProjects
+n_dir=./snvm
+n_dir_pri=./.snvm
+
+cmd=$1
+
+# Checks if there's a leading `v` in the version
+
+if [[ $2 == v* ]] ;
+then
+    version=$2
+else
+    version=v$2
+fi
+
+install () {
+
+    # Make sure there's a version specified
+
+    if [ -n "$version" ] && [[ $version == v* ]] ;
+    then
+        usage
+        exit 1
+    fi
+
+    cd $base_dir
+
+    # If we already have the version you want on hand
+    # use that instead of fetching a new one
+
+    if [ -d $n_dir_pri/version/$version ] && [ -d $n_dir_pri/executable/$version ] ;
+    then
+        use
+        exit 1
+    fi
+
+    # If ./node already exits, label it and put it aside
+    # in case you need it later
+
+    if [ -d "./node" ] && [ -e "./node/tools/getnodeversion.py" ] ;
+    then
+        node_ver=v`python ./node/tools/getnodeversion.py`
+        mkdir -p $n_dir_pri
+
+        # Move the source into place
+
+        mkdir -p $n_dir_pri/version
+        mv ./node $n_dir_pri/version/$node_ver
+
+        # Move the executable into place
+
+        mkdir -p $n_dir_pri/executable
+        mkdir -p $n_dir_pri/executable/$node_ver
+
+        cp -f `which node` $n_dir_pri/executable/$node_ver/node
+        cp -f `which npm` $n_dir_pri/executable/$node_ver/npm
+    fi
+
+    # Fetches node.js from Github and install the specified version
+    # as a tag
+
+    if [ -d $n_dir ] ;
+    then
+        sudo rm -R $n_dir
+    fi
+
+    git clone git://github.com/joyent/node.git $n_dir
+    cd $n_dir
+    git checkout -q $version
+    ./configure
+    make
+    make install
+    cd $base_dir
+
+    # Move the new version of node in place
+    # Restore previous state
+
+    mv -f $n_dir ./node
+    cd $restore
+}
+
+list () {
+
+    cd $base_dir
+
+    # Make sure we have node installed to get it's version
+
+    if [ -n "`which node`" ] ;
+    then
+        node_ver=`node -v`
+    else
+        node_ver=v`python ./node/tools/getnodeversion.py`
+    fi
+
+    # Make sure we're set up
+
+    if [ -d $n_dir_pri/version ] ;
+    then
+        cd $n_dir_pri/version/
+
+        echo -e "Current version: $node_ver\n"
+        for ver in *
+        do
+            echo -e "\t $ver"
+        done
+    else
+        echo "You don't have any previous versions installed"
+    fi
+
+    cd $restore
+}
+
+use () {
+
+    cd $base_dir
+
+    ver_dir=$n_dir_pri/version
+    exec_dir=$n_dir_pri/executable
+
+    if [ -d "./node" ] && [ -e "./node/tools/getnodeversion.py" ] && \
+       [ -d $ver_dir/$version ] && [ -d $exec_dir/$version ];
+    then
+        node_ver=v`python ./node/tools/getnodeversion.py`
+
+        # Move the current node folder and the node and npm
+        # executable files into their proper folder
+
+        if [ -d $ver_dir/$node_ver ] ;
+        then
+            sudo rm -R $ver_dir/$node_ver
+            mv -f ./node $ver_dir/$node_ver
+        fi
+
+        mkdir -p $exec_dir/$node_ver
+
+        node_bin=`which node`
+        npm_bin=`which npm`
+
+        cp -f $node_bin $n_dir_pri/executable/$node_ver/node
+        cp -f $npm_bin $n_dir_pri/executable/$node_ver/npm
+
+        # Swap in the specified versions of each
+
+        cp -R $ver_dir/$version ./node
+
+        cp -f $exec_dir/$version/node $node_bin
+        cp -f $exec_dir/$version/npm $npm_bin
+    else
+        echo -e "You need to install that version before you can use it."
+    fi
+
+    cd $restore
+}
+
+usage () {
+
+    name=`basename $0`
+
+    echo -e "usage: $name [ install | use ] [v]0.0.0 "
+    echo -e "       $name list"
+    echo -e " "
+    echo -e "       Easily manage different versions of node.js"
+    echo -e " "
+    echo -e "       $name install [v]0.0.0 -- installs the specified version of node"
+    echo -e "       $name use     [v]0.0.0 -- switches to a pre-installed version of node"
+    echo -e "       $name list             -- lists all installed versions of node"
+}
+
+# Command interpreter
+
+case $cmd in
+    install)
+        install
+        ;;
+    list)
+        list
+        ;;
+    use)
+        use
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac
