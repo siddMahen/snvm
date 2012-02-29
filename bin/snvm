@@ -7,7 +7,9 @@
 restore=$PWD
 
 # This needs to be changed to work for everyone
-base_dir=$HOME/GitProjects
+# base_dir=$HOME/GitProjects
+
+base_dir=/usr/local
 n_dir=./snvm
 n_dir_pri=./.snvm
 
