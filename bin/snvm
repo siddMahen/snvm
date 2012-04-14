@@ -7,9 +7,8 @@
 restore=$PWD
 
 # This needs to be changed to work for everyone
-# base_dir=$HOME/GitProjects
+base_dir=$HOME/GitProjects
 
-base_dir=/usr/local
 n_dir=./snvm
 n_dir_pri=./.snvm
 
@@ -28,7 +27,7 @@ install () {
 
     # Make sure there's a version specified
 
-    if [ -n "$version" ] && [[ $version == v* ]] ;
+    if [[ "$version" != v* ]] ;
     then
         usage
         exit 1
@@ -56,7 +55,9 @@ install () {
         # Move the source into place
 
         mkdir -p $n_dir_pri/version
-        mv ./node $n_dir_pri/version/$node_ver
+        rm -R -f $n_dir_pri/version/$node_ver
+        cp -R ./node $n_dir_pri/version/$node_ver
+        rm -R -f ./node
 
         # Move the executable into place
 
