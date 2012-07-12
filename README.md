@@ -2,6 +2,14 @@
 
 Simple node version management.
 
+## Installation
+
+Using `npm`, do:
+
+```
+$ npm install -g snvm
+```
+
 ## Usage
 
 `snvm` is dead easy to use:
